@@ -46,21 +46,19 @@ app.post('/convert', async (req, res) => {
 });
 
 // Route for code debugging
-app.get('/debug', async (req, res) => {
-  res.send("debugggiiinnnggg")
-  // try {
-  //   const { code } = req.body;
+app.post('/debug', async (req, res) => {
+  try {
+    const { code } = req.body;
 
-  //   // Send a request to the GPT-3.5 turbo model for code debugging
-  //   const debuggingOutput = await makeOpenAIRequest(`Debug the following code: ${code}`);
+    // Send a request to the GPT-3.5 turbo model for code debugging
+    const debuggingOutput = await makeOpenAIRequest(`Debug the following code: ${code}`);
 
-  //   res.json({ debuggingOutput });
-  // } catch (error) {
-  //   console.error('Error during code debugging:', error.message);
-  //   res.status(500).json({ error: 'An error occurred during code debugging.' });
-  // }
+    res.json({ debuggingOutput });
+  } catch (error) {
+    console.error('Error during code debugging:', error.message);
+    res.status(500).json({ error: 'An error occurred during code debugging.' });
+  }
 });
-
 // Route for code quality check
 app.post('/qualitycheck', async (req, res) => {
   try {
