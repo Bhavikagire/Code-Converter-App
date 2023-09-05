@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Code Converter, Debugger, and Quality Checker</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.26.0/min/vs/editor/editor.main.min.css">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header>
+        <h1>Code Converter, Debugger, and Quality Checker</h1>
+    </header>
+    <p id="waitfordisplay">Kindly allow a brief moment after clicking the button, as the content is being prepared for display.<p>
+    <div class="container">
+        <div class="editor-container">
+            <div id="options">
+                <label for="inputLanguage">Language for Input Code:</label>
+                <select id="inputLanguage">
+                    <option value="JavaScript">JavaScript</option>
+                    <option value="Python">Python</option>
+                    <option value="Java">Java</option>
+                    <option value="C++">C++</option>
+                    <option value="Ruby">Ruby</option>
+                    <option value="Go">Go</option>
+                    <!-- Add other language options as needed -->
+                </select>
+            </div>
+            <div id="editorContainer"></div>
+        </div>
+        <div class="output-container">
+            <div id="options">
+                <label for="targetLanguage">Select Target Language:</label>
+                <select id="targetLanguage">
+                    <option value="Python">Python</option>
+                    <option value="JavaScript">JavaScript</option>
+                    <option value="Java">Java</option>
+                    <option value="C++">C++</option>
+                    <option value="Ruby">Ruby</option>
+                    <option value="Go">Go</option>
+                    <!-- Add other language options as needed -->
+                </select>
+                <button id="convertBtn" class="output-Btn">Convert Code</button>
+                <button id="debugBtn" class="output-Btn">Debug Code</button>
+                <button id="qualityCheckBtn" class="output-Btn">Quality Check</button>
+            </div>
+            <div id="outputResult" style="display: none;">
+                <div id="errorResult">
+                    <h2>Error:</h2>
+                    <pre id="errorText"></pre>
+                </div>
+                <div id="convertedCodeResult">
+                    <h2>Converted Code:</h2>
+                    <pre id="outputCode"></pre>
+                </div>
+                <div id="debugResult">
+                    <h2>Debugging Result:</h2>
+                    <pre id="debugResultText"></pre>
+                </div>
+                <div id="qualityCheckResult">
+                    <h2>Quality Check Result:</h2>
+                    <p id="qualityCheckResultText"></p>
+                </div>
+            </div>
+            <div>
+                <p id="output-show-here"></p>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.26.0/min/vs/loader.js"></script>
+    <script>
+        // const apiUrl = 'https://poised-leg-warmers-fox.cyclic.cloud/';
+
+        const apiUrl = 'https://code-converter-app.onrender.com/'
+                        
+        // const apiUrl = 'http://localhost:3000/'
+        require.config({ paths: { vs: 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.26.0/min/vs' } });
+        require(['vs/editor/editor.main'], function () {
+            const editor = monaco.editor.create(document.getElementById('editorContainer'), {
+                value: 'console.log("Hello, World!");\n',
+                language: 'javascript',
+                fontSize: 16,
+            });
+
+            window.addEventListener('resize', () => editor.layout());
+        });
+
+        document.getElementById('convertBtn').addEventListener('click', convertCode);
+        document.getElementById('debugBtn').addEventListener('click', debugCode);
+        document.getElementById('qualityCheckBtn').addEventListener('click', qualityCheck);
+
+        function showResultSection(sectionId) {
+            const resultSections = ['errorResult', 'convertedCodeResult', 'debugResult', 'qualityCheckResult'];
+            for (const section of resultSections) {
+                document.getElementById(section).style.display = section === sectionId ? 'block' : 'none';
+            }
+        }
+
+        async function convertCode() {
+            const inputLanguage = document.getElementById('inputLanguage').value;
+            const targetLanguage = document.getElementById('targetLanguage').value;
+            const code = monaco.editor.getModels()[0].getValue();
+
+            try {
+                const result = await fetch(`${apiUrl}convert`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ code, targetLanguage }),
+                });
+
+                if (!result.ok) {
+                    console.log(result)
+                    const errorResponse = await result.json();
+                    throw new Error(errorResponse.error);
+                    
+                }
+
+                const data = await result.json();
+                document.getElementById('outputCode').innerText = data.convertedCode;
+                document.getElementById("output-show-here").innerText = data.convertedCode
+       
+                
+                showResultSection('convertedCodeResult');
+            } catch (error) {
+                document.getElementById('errorText').innerText = error.message;
+                showResultSection('errorResult');
+                console.error('Code conversion error:', error);
+            }
+        }
+
+        async function debugCode() {
+            const code = monaco.editor.getModels()[0].getValue();
+
+            try {
+                const result = await fetch(`${apiUrl}debug`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ code }),
+                });
+
+                if (!result.ok) {
+                    const errorResponse = await result.json();
+                    throw new Error(errorResponse.error);
+                }
+
+                const data = await result.json();
+                document.getElementById('debugResultText').innerText = data.debuggingOutput;
+                document.getElementById("output-show-here").innerText = data.debuggingOutput
+       
+                showResultSection('debugResult');
+            } catch (error) {
+                document.getElementById('errorText').innerText = error.message;
+                showResultSection('errorResult');
+                console.error('Code debugging error:', error);
+            }
+        }
+
+        async function qualityCheck() {
+    const code = monaco.editor.getModels()[0].getValue();
+
+    try {
+        const result = await fetch(`${apiUrl}qualitycheck`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ code }),
+        });
+
+        if (!result.ok) {
+            const errorResponse = await result.json();
+            throw new Error(errorResponse.error);
+        }
+
+        const data = await result.json();
+        console.log('Quality Check Output:', data.qualityCheckOutput); // Add this line to verify the output in the console
+        document.getElementById('qualityCheckResultText').innerText = data.qualityCheckOutput;
+        document.getElementById("output-show-here").innerText = data.qualityCheckOutput
+        showResultSection('qualityCheckResult');
+    } catch (error) {
+        document.getElementById('errorText').innerText = error.message;
+        showResultSection('errorResult');
+        console.error('Code quality check error:', error);
+    }
+}
+
+    </script>
+</body>
+</html>
